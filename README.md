@@ -1,2 +1,2 @@
-# ynab-tools
+# ynab-scripts
 Misc. automations for YNAB
