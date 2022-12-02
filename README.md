@@ -2,7 +2,7 @@
 Misc. automations for YNAB
 
 # Commands
-`token`
+`token <personal_access_token>`
 - Sets the YNAB personal access token needed to use the API.
 
 `budget`
