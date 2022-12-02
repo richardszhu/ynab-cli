@@ -10,6 +10,7 @@ BASE_API_URL = "https://api.youneedabudget.com/v1/"
 
 CHURN_FLAG = "#churn"
 
+
 ## TOKENS
 
 def get_token():
@@ -70,12 +71,12 @@ def get_total_churn():
     total = 0
     for t in all_transactions:
 
-        if t["memo"] and CHURN_FLAG in t["memo"]:
+        if CHURN_FLAG in (t["memo"] or "").lower():
             print(
                 f"Transaction: {t['id']}\n"
                 f"Account: {t['account_name']}\n"
-                f"Payee: {t['payee_name']}\n"
                 f"Date: {t['date']}\n"
+                f"Payee: {t['payee_name']}\n"
                 f"Amount: ${t['amount'] / 1000}\n"
                 f"Memo: {t['memo']}\n"
             )
@@ -83,12 +84,12 @@ def get_total_churn():
 
         # Also search split transactions
         for st in t["subtransactions"]:
-            if st["memo"] and CHURN_FLAG in st["memo"]:
+            if CHURN_FLAG in (st["memo"] or "").lower():
                 print(
                     f"Subtransaction: {st['id']}\n"
                     f"Account: {t['account_name']}\n"
-                    f"Payee: {st['payee_name'] or t['payee_name']}\n"
                     f"Date: {t['date']}\n"
+                    f"Payee: {st['payee_name'] or t['payee_name']}\n"
                     f"Amount: ${st['amount'] / 1000}\n"
                     f"Memo: {st['memo']}\n"
                 )
