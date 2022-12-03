@@ -1,4 +1,4 @@
-# ynab-scripts
+# ynab-cli
 Misc. automations for YNAB
 
 # Commands
