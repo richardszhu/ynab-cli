@@ -29,6 +29,11 @@ def set_token(token):
     print("Set token.")
 
 
+def delete_token():
+    TOKEN_FILE.unlink()
+    print("Deleted token.")
+
+
 ## BUDGETS 
 
 def get_all_budgets_and_set():
@@ -140,6 +145,9 @@ def main():
         if cmd == "token":
             if check_args_len(cmd, args, 1):
                 set_token(*args)
+        if cmd == "del-token":
+            if check_args_len(cmd, args, 1):
+                delete_token(*args)
         elif cmd == "budget":
             if check_args_len(cmd, args, 0):
                 get_all_budgets_and_set()
