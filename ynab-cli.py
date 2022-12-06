@@ -36,7 +36,7 @@ def delete_token():
 
 ## BUDGETS 
 
-def get_all_budgets_and_set():
+def get_all_budgets_and_set_chosen():
     response = make_request("GET", "/budgets")
     budgets = response.json()["data"]["budgets"]
     
@@ -146,11 +146,11 @@ def main():
             if check_args_len(cmd, args, 1):
                 set_token(*args)
         if cmd == "del-token":
-            if check_args_len(cmd, args, 1):
+            if check_args_len(cmd, args, 0):
                 delete_token(*args)
         elif cmd == "budget":
             if check_args_len(cmd, args, 0):
-                get_all_budgets_and_set()
+                get_all_budgets_and_set_chosen()
         elif cmd == "total-churn":
             if check_args_len(cmd, args, 0):
                 get_total_churn()
