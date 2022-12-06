@@ -5,6 +5,9 @@ Misc. automations for YNAB
 `token <personal_access_token>`
 - Sets the YNAB personal access token needed to use the API.
 
+`del-token`
+- Deletes the YNAB personal access token if it was set.
+
 `budget`
 - Shows all budgets and lets user set a budget to perform actions on.
 
