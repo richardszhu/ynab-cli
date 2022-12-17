@@ -132,6 +132,13 @@ def get_total_churn():
     print(f"TOTAL CHURN: ${total / 1000}")
 
 
+def is_spend_transaction(transaction):
+    t = transaction
+    is_transfer = t["transfer_transaction_id"]
+    is_statement_credit = t["category_name"] == "Inflow: Ready to Assign"
+    return not is_transfer and not is_statement_credit
+
+
 def get_spend_for_an_account():
     account_id = get_all_accounts_and_id_of_chosen()
     if not account_id:
@@ -150,7 +157,7 @@ def get_spend_for_an_account():
         if t["subtransactions"]:
             # Search split transactions
             for st in t["subtransactions"]:
-                if not t["transfer_transaction_id"] and t["category_name"] != "Inflow: Ready to Assign":
+                if is_spend_transaction(st):
                     print(
                         f"Subtransaction: {st['id']}\n"
                         f"Account: {t['account_name']}\n"
@@ -162,8 +169,7 @@ def get_spend_for_an_account():
                     total += st['amount']
         else:
             # Check that transaction isn't a transfer and isn't statement credit
-            if not t["transfer_transaction_id"] and t["category_name"] != "Inflow: Ready to Assign":
-                # Check
+            if is_spend_transaction(t):
                 print(
                     f"Transaction: {t['id']}\n"
                     f"Account: {t['account_name']}\n"
