@@ -15,4 +15,13 @@ Misc. automations for YNAB
 - Finds all transactions that are marked as churn transactions, and finds their sum. A transaction is marked by adding `#churn` to its memo.
 
 `spend`
-- Finds the total spend for an account (to see progress towards a MSR)
+- Finds the total spend for an account (to see progress towards a MSR).
+
+`window <num_months>`
+- Finds the number of new credit cards opened in a time window. Based on 'Starting Balance' payee, and on accounts in YNAB (be wary of AU cards).
+
+
+# Requirements
+Python 3.7+
+requests
+dateutil

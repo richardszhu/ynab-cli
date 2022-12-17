@@ -2,6 +2,8 @@ from pathlib import Path
 from requests import request
 import json
 from pprint import pprint
+from datetime import date
+from dateutil.relativedelta import relativedelta
 
 # https://stackoverflow.com/a/46061872
 TOKEN_FILE = Path(__file__).resolve().parent / ".YNAB_PERSONAL_ACCESS_TOKEN"
@@ -89,7 +91,34 @@ def get_all_accounts_and_id_of_chosen():
     print(f"Chose account {account_name} (ID: {account_id})")
     return account_id
 
+
+def get_credit_card_openings_in_window(num_months):
+    window_start = date.today() - relativedelta(months=num_months)
+    print(f"ACCOUNTS OPENED IN THE LAST {num_months} MONTHS:")
     
+
+    response = make_request_with_budget_suffix("GET", "accounts")
+    if not response:
+        return
+    accounts = response.json()["data"]["accounts"]
+
+    total = 0
+    for account in accounts:
+        if account["type"] == "creditCard":
+            response = make_request_with_budget_suffix("GET", f"accounts/{account['id']}/transactions")
+            if not response:
+                continue
+            transactions = response.json()["data"]["transactions"]
+
+            starting_bal_transaction = next(t for t in transactions if t["payee_name"] == "Starting Balance")
+            opening_date = date.fromisoformat(starting_bal_transaction["date"])
+
+            if opening_date >= window_start:
+                total += 1
+                print(f"{account['name']} (Opened {opening_date})")
+    
+    print (f"TOTAL: {total}")
+
 
 ## TRANSACTIONS
 
@@ -98,12 +127,12 @@ def get_total_churn():
     if not response:
         return
 
-    all_transactions = response.json()["data"]["transactions"]
+    transactions = response.json()["data"]["transactions"]
 
     print("ALL CHURN TRANSACTIONS:")
 
     total = 0
-    for t in all_transactions:
+    for t in transactions:
 
         if CHURN_FLAG in (t["memo"] or "").lower():
             print(
@@ -148,12 +177,12 @@ def get_spend_for_an_account():
     if not response:
         return
 
-    all_transactions = response.json()["data"]["transactions"]
+    transactions = response.json()["data"]["transactions"]
 
     print("ALL TRANSACTIONS FOR THIS ACCOUNT:")
     total = 0
 
-    for t in all_transactions:
+    for t in transactions:
         if t["subtransactions"]:
             # Search split transactions
             for st in t["subtransactions"]:
@@ -243,6 +272,9 @@ def main():
         elif cmd == "spend":
             if check_args_len(cmd, args, 0):
                 get_spend_for_an_account()
+        elif cmd == "window":
+            if check_args_len(cmd, args, 1):
+                get_credit_card_openings_in_window(*map(int, args))
         elif cmd == "debug":
             global DEBUG
             DEBUG = not DEBUG
