@@ -22,6 +22,6 @@ Misc. automations for YNAB
 
 
 # Requirements
-Python 3.7+
-requests
-dateutil
+- Python 3.7+
+- requests
+- dateutil
