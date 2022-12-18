@@ -18,7 +18,7 @@ Misc. automations for YNAB
 - Finds the total spend for an account (to see progress towards a MSR).
 
 `window <num_months>`
-- Finds the number of new credit cards opened in a time window. Based on 'Starting Balance' payee, and on accounts in YNAB (be wary of AU cards).
+- Finds the number of new credit cards opened in the last num_months. Based on 'Starting Balance' payee, and on accounts in YNAB (be wary of AU cards).
 
 
 # Requirements
