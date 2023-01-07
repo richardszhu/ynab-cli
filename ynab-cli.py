@@ -11,8 +11,6 @@ BUDGET_ID_FILE = Path(__file__).resolve().parent / ".YNAB_BUDGET_ID"
 
 BASE_API_URL = "https://api.youneedabudget.com/v1/"
 
-CHURN_FLAG = "#churn"
-
 DEBUG = False
 
 ## TOKENS
@@ -122,19 +120,22 @@ def get_credit_card_openings_in_window(num_months):
 
 ## TRANSACTIONS
 
-def get_total_churn():
+def get_total_with_flag(flag):
+    if flag[0] != "#":
+        flag = f"#{flag}"
+
     response = make_request_with_budget_suffix("GET", "transactions")
     if not response:
         return
 
     transactions = response.json()["data"]["transactions"]
 
-    print("ALL CHURN TRANSACTIONS:")
+    print(f"ALL TRANSACTIONS WITH FLAG {flag}:")
 
     total = 0
     for t in transactions:
 
-        if CHURN_FLAG in (t["memo"] or "").lower():
+        if flag in (t["memo"] or "").lower():
             print(
                 f"Transaction: {t['id']}\n"
                 f"Account: {t['account_name']}\n"
@@ -147,7 +148,7 @@ def get_total_churn():
 
         # Also search split transactions
         for st in t["subtransactions"]:
-            if CHURN_FLAG in (st["memo"] or "").lower():
+            if flag in (st["memo"] or "").lower():
                 print(
                     f"Subtransaction: {st['id']}\n"
                     f"Account: {t['account_name']}\n"
@@ -158,7 +159,7 @@ def get_total_churn():
                 )
                 total += st['amount']
 
-    print(f"TOTAL CHURN: ${total / 1000}")
+    print(f"TOTAL {flag}: ${total / 1000}")
 
 
 def is_spend_transaction(transaction):
@@ -266,9 +267,9 @@ def main():
         elif cmd == "budget":
             if check_args_len(cmd, args, 0):
                 get_all_budgets_and_set_chosen()
-        elif cmd == "churn":
-            if check_args_len(cmd, args, 0):
-                get_total_churn()
+        elif cmd == "total":
+            if check_args_len(cmd, args, 1):
+                get_total_with_flag(*args)
         elif cmd == "spend":
             if check_args_len(cmd, args, 0):
                 get_spend_for_an_account()
