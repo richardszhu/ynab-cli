@@ -11,8 +11,8 @@ Misc. automations for YNAB
 `budget`
 - Shows all budgets and lets user set a budget to perform actions on.
 
-`churn`
-- Finds all transactions that are marked as churn transactions, and finds their sum. A transaction is marked by adding `#churn` to its memo.
+`total <flag>`
+- Finds all transactions that are marked with #flag, and finds their sum.
 
 `spend`
 - Finds the total spend for an account (to see progress towards a MSR).
