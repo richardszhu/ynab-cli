@@ -147,7 +147,7 @@ def get_total_with_flag(flag):
             total += t['amount']
 
         # Also search split transactions
-        for st in t["subtransactions"]:
+        for st in t.get("subtransactions", []):
             if flag in (st["memo"] or "").lower():
                 print(
                     f"Subtransaction: {st['id']}\n"
@@ -213,6 +213,33 @@ def get_spend_for_an_account():
     print(f"TOTAL SPEND: ${-total / 1000}")
 
 
+## PAYEES
+
+def get_unused_payees():    
+    response = make_request_with_budget_suffix("GET", "transactions")
+    if not response:
+        return
+
+    transactions = response.json()["data"]["transactions"]
+    used_payee_ids = set()
+    for t in transactions:
+        used_payee_ids.add(t["payee_id"])
+        for st in t["subtransactions"]:
+            used_payee_ids.add(st["payee_id"])
+
+    response = make_request_with_budget_suffix("GET", "payees")
+    if not response:
+        return
+
+    print("UNUSED PAYEES:")
+    payees = sorted(response.json()["data"]["payees"], key=lambda p: p["name"].lower())
+    for p in payees:
+        if p["id"] not in used_payee_ids and p["transfer_account_id"] is None:
+            print(p["name"])
+
+
+
+
 ## REQUESTS
 
 def make_request_with_budget_suffix(method, suffix):
@@ -276,6 +303,9 @@ def main():
         elif cmd == "window":
             if check_args_len(cmd, args, 1):
                 get_credit_card_openings_in_window(*map(int, args))
+        elif cmd == "unused-payees":
+            if check_args_len(cmd, args, 0):
+                get_unused_payees()
         elif cmd == "debug":
             global DEBUG
             DEBUG = not DEBUG
