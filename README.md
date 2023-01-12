@@ -20,6 +20,9 @@ Misc. automations for YNAB
 `window <num_months>`
 - Finds the number of new credit cards opened in the last num_months. Based on 'Starting Balance' payee, and on accounts in YNAB (be wary of AU cards).
 
+`unused-payees`
+- Lists out payees that have no transactions attributed to them.
+
 
 # Requirements
 - Python 3.7+
