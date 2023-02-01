@@ -1,6 +1,8 @@
 # ynab-cli
 Misc. automations for YNAB
 
+To start: `python3.10 ynab-cli.py`
+
 # Commands
 `token <personal_access_token>`
 - Sets the YNAB personal access token needed to use the API.
