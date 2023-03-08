@@ -12,7 +12,7 @@ Misc. automations for YNAB
 - Shows all budgets and lets user set a budget to perform actions on.
 
 `total <flag>`
-- Finds all transactions that are marked with #flag, and finds their sum.
+- Finds all transactions that are marked with #flag <amount>, and finds their sum.
 
 `spend`
 - Finds the total spend for an account (to see progress towards a MSR).

@@ -120,6 +120,14 @@ def get_credit_card_openings_in_window(num_months):
 
 ## TRANSACTIONS
 
+def str_is_float(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
+
+
 def get_total_with_flag(flag):
     if flag[0] != "#":
         flag = f"#{flag}"
@@ -134,8 +142,16 @@ def get_total_with_flag(flag):
 
     total = 0
     for t in transactions:
+        memo_words = (t["memo"] or "").lower().split()
 
-        if flag in (t["memo"] or "").lower():
+        if flag in memo_words:
+            i = memo_words.index(flag)
+            if i + 1 < len(memo_words) and str_is_float(memo_words[i+1]):
+                amount = float(memo_words[i+1]) * 1000
+            else:
+                amount = t['amount']
+
+
             print(
                 f"Transaction: {t['id']}\n"
                 f"Account: {t['account_name']}\n"
@@ -144,7 +160,7 @@ def get_total_with_flag(flag):
                 f"Amount: ${t['amount'] / 1000}\n"
                 f"Memo: {t['memo']}\n"
             )
-            total += t['amount']
+            total += amount
 
         # Also search split transactions
         for st in t.get("subtransactions", []):
