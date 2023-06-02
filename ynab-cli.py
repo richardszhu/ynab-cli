@@ -153,10 +153,10 @@ def get_total_with_flag(flag):
 
         if flag in memo_words:
             i = memo_words.index(flag)
-            amount_str = memo_words[i+1].lower() if i + 1 < len(memo_words) else ""
+            amount_str = memo_words[i + 1].lower() if i + 1 < len(memo_words) else ""
 
             if str_is_float(amount_str):
-                amount = float(memo_words[i+1]) * 1000
+                amount = -float(memo_words[i+1]) * 1000
             elif amount_str in FRACTIONS:
                 amount = t['amount'] / FRACTIONS[amount_str]
             elif amount_str == "":
