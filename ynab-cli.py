@@ -128,6 +128,13 @@ def str_is_float(string):
         return False
 
 
+FRACTIONS = {
+    "half" : 2,
+    "third" : 3, 
+    "fourth" : 4,
+    "fifth": 5
+}
+
 def get_total_with_flag(flag):
     if flag[0] != "#":
         flag = f"#{flag}"
@@ -146,11 +153,16 @@ def get_total_with_flag(flag):
 
         if flag in memo_words:
             i = memo_words.index(flag)
-            if i + 1 < len(memo_words) and str_is_float(memo_words[i+1]):
-                amount = float(memo_words[i+1]) * 1000
-            else:
-                amount = t['amount']
+            amount_str = memo_words[i+1].lower() if i + 1 < len(memo_words) else ""
 
+            if str_is_float(amount_str):
+                amount = float(memo_words[i+1]) * 1000
+            elif amount_str in FRACTIONS:
+                amount = t['amount'] / FRACTIONS[amount_str]
+            elif amount_str == "":
+                amount = t['amount']
+            else:
+                print("ERROR")
 
             print(
                 f"Transaction: {t['id']}\n"
@@ -159,6 +171,7 @@ def get_total_with_flag(flag):
                 f"Payee: {t['payee_name']}\n"
                 f"Amount: ${t['amount'] / 1000}\n"
                 f"Memo: {t['memo']}\n"
+                f"Flagged Amount: ${amount / 1000}\n"
             )
             total += amount
 
