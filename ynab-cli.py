@@ -10,6 +10,7 @@ TOKEN_FILE = Path(__file__).resolve().parent / ".YNAB_PERSONAL_ACCESS_TOKEN"
 BUDGET_ID_FILE = Path(__file__).resolve().parent / ".YNAB_BUDGET_ID"
 
 BASE_API_URL = "https://api.youneedabudget.com/v1/"
+MONEY_GRANULARITY = 1000
 
 DEBUG = False
 
@@ -175,7 +176,7 @@ def get_total_with_flag(flag):
             amount_str = memo_words[i + 1].lower() if i + 1 < len(memo_words) else ""
 
             if str_is_float(amount_str):
-                amount = -float(memo_words[i+1]) * 1000
+                amount = -float(memo_words[i+1]) * MONEY_GRANULARITY
             elif eval_fraction(amount_str):
                 amount = t['amount'] * eval_fraction(amount_str)
             elif amount_str == "":
@@ -188,13 +189,13 @@ def get_total_with_flag(flag):
                 f"Account: {t['account_name']}\n"
                 f"Date: {t['date']}\n"
                 f"Payee: {t['payee_name']}\n"
-                f"Amount: ${t['amount'] / 1000}\n"
+                f"Amount: ${t['amount'] / MONEY_GRANULARITY}\n"
                 f"Memo: {t['memo']}\n"
-                f"Flagged Amount: ${amount / 1000}\n"
+                f"Flagged Amount: ${amount / MONEY_GRANULARITY}\n"
             )
             total += amount
 
-    print(f"TOTAL {flag}: ${total / 1000}")
+    print(f"TOTAL {flag}: ${total / MONEY_GRANULARITY}")
 
 
 def unflag_transactions(flag):
@@ -260,7 +261,7 @@ def get_spend_for_an_account():
                         f"Account: {t['account_name']}\n"
                         f"Date: {t['date']}\n"
                         f"Payee: {st['payee_name'] or t['payee_name']}\n"
-                        f"Amount: ${st['amount'] / 1000}\n"
+                        f"Amount: ${st['amount'] / MONEY_GRANULARITY}\n"
                         f"Memo: {st['memo']}\n"
                     )
                     total += st['amount']
@@ -272,12 +273,12 @@ def get_spend_for_an_account():
                     f"Account: {t['account_name']}\n"
                     f"Date: {t['date']}\n"
                     f"Payee: {t['payee_name']}\n"
-                    f"Amount: ${t['amount'] / 1000}\n"
+                    f"Amount: ${t['amount'] / MONEY_GRANULARITY}\n"
                     f"Memo: {t['memo']}\n"
                 )
                 total += t['amount']
 
-    print(f"TOTAL SPEND: ${-total / 1000}")
+    print(f"TOTAL SPEND: ${-total / MONEY_GRANULARITY}")
 
 
 ## PAYEES
