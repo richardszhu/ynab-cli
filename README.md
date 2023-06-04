@@ -3,6 +3,8 @@ Misc. automations for YNAB
 
 To start: `python3.10 ynab-cli.py`
 
+YNAB API: https://api.ynab.com/v1
+
 # Commands
 `token <personal_access_token>`
 - Sets the YNAB personal access token needed to use the API.
@@ -14,7 +16,10 @@ To start: `python3.10 ynab-cli.py`
 - Shows all budgets and lets user set a budget to perform actions on.
 
 `total <flag>`
-- Finds all transactions that are marked with #flag [amount], and finds their sum.
+- Finds all transactions that are marked with #flag [amount], and finds their sum. Doesn't search subtransactions.
+
+`unflag <flag>`
+- Finds all transactions that are marked with #flag [amount], and removes the flag and amount. Doesn't search subtransactions. Assumes flag/amount is at end of the memo.
 
 `spend`
 - Finds the total spend for an account (to see progress towards a MSR).

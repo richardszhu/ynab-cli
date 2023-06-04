@@ -44,7 +44,10 @@ def get_all_budgets_and_set_chosen():
     
     print("BUDGETS:")
     for i, budget in enumerate(budgets):
-        print(f"{i}: {budget['name']}")
+        print(f"{i}: {budget['name']} ({budget['id']})")
+
+    if BUDGET_ID_FILE.exists():
+        print(f"Current budget ID: {get_budget_id()}")
 
     user_input = input("Which budget do you want to set? Input the number (or nothing to cancel) > ").strip()
     if user_input == "":
@@ -54,7 +57,7 @@ def get_all_budgets_and_set_chosen():
     budget_name = budgets[i]["name"]
     budget_id = budgets[i]["id"]
     BUDGET_ID_FILE.write_text(budget_id)
-    print(f"Set budget to {budget_name} (ID: {budget_id})")
+    print(f"Set budget to {budget_name} ({budget_id})")
 
 
 def get_budget_id():
@@ -127,13 +130,29 @@ def str_is_float(string):
     except ValueError:
         return False
 
-
-FRACTIONS = {
-    "half" : 2,
-    "third" : 3, 
-    "fourth" : 4,
-    "fifth": 5
+FRACTION_WORDS = {
+    "full" : 1,
+    "half" : 1 / 2,
+    "third" : 1 / 3, 
+    "fourth" : 1 / 4,
+    "fifth": 1 / 5,
 }
+
+def eval_fraction(string):
+    """Returns 0 if str is not a fraction, else the fraction"""
+    try:
+        if string in FRACTION_WORDS:
+            return FRACTION_WORDS[string]
+
+        values = string.split('/')
+        if len(values) == 2 and all(v.isdigit() for v in values):
+            return eval(string)
+        else:
+            return 0
+    except ValueError:
+        return 0
+
+
 
 def get_total_with_flag(flag):
     if flag[0] != "#":
@@ -157,8 +176,8 @@ def get_total_with_flag(flag):
 
             if str_is_float(amount_str):
                 amount = -float(memo_words[i+1]) * 1000
-            elif amount_str in FRACTIONS:
-                amount = t['amount'] / FRACTIONS[amount_str]
+            elif eval_fraction(amount_str):
+                amount = t['amount'] * eval_fraction(amount_str)
             elif amount_str == "":
                 amount = t['amount']
             else:
@@ -175,20 +194,39 @@ def get_total_with_flag(flag):
             )
             total += amount
 
-        # Also search split transactions
-        for st in t.get("subtransactions", []):
-            if flag in (st["memo"] or "").lower():
-                print(
-                    f"Subtransaction: {st['id']}\n"
-                    f"Account: {t['account_name']}\n"
-                    f"Date: {t['date']}\n"
-                    f"Payee: {st['payee_name'] or t['payee_name']}\n"
-                    f"Amount: ${st['amount'] / 1000}\n"
-                    f"Memo: {st['memo']}\n"
-                )
-                total += st['amount']
-
     print(f"TOTAL {flag}: ${total / 1000}")
+
+
+def unflag_transactions(flag):
+    if flag[0] != "#":
+        flag = f"#{flag}"
+
+    response = make_request_with_budget_suffix("GET", "transactions")
+    if not response:
+        return
+
+    transactions = response.json()["data"]["transactions"]
+
+    print(f"UNFLAGGING ALL TRANSACTIONS WITH FLAG {flag}.")
+
+    unflagged_transactions = []
+    for t in transactions:
+
+        memo_words = (t["memo"] or "").lower().split()
+        if flag in memo_words:
+            i = memo_words.index(flag)
+
+            #remove flag and amount, update the memo
+            memo = t["memo"].split()
+            memo.pop(i)
+            if i < len(memo):
+                memo.pop(i)
+            t['memo'] = " ".join(memo)
+            unflagged_transactions.append(t)
+
+    make_request_with_budget_suffix("PATCH", f"transactions", data={"transactions": unflagged_transactions})
+    print(f"Unflagged {len(unflagged_transactions)} transactions.")
+
 
 
 def is_spend_transaction(transaction):
@@ -271,26 +309,29 @@ def get_unused_payees():
 
 ## REQUESTS
 
-def make_request_with_budget_suffix(method, suffix):
+def make_request_with_budget_suffix(method, suffix, data=None):
     budget_id = get_budget_id()
     if not budget_id:
         return None
     suffix_with_budget = f"budgets/{budget_id}/{suffix}" 
-    return make_request(method, suffix_with_budget)
+    return make_request(method, suffix_with_budget, data)
 
 
-def make_request(method, suffix):
+def make_request(method, suffix, data=None):
     token = get_token()
     if not token:
         return False
 
     url = BASE_API_URL + suffix
     headers = {"Authorization": f"Bearer {token}"}
-    response = request(method=method, url=url, headers=headers)
+    response = request(method=method, url=url, headers=headers, json=data)
     
     if DEBUG:
         print("DEBUG:", method, suffix)
         print("DEBUG:", response)
+        if not response.ok:
+            print(response.text)
+
     return response
     
 
@@ -326,6 +367,9 @@ def main():
         elif cmd == "total":
             if check_args_len(cmd, args, 1):
                 get_total_with_flag(*args)
+        elif cmd == "unflag":
+            if check_args_len(cmd, args, 1):
+                unflag_transactions(*args)
         elif cmd == "spend":
             if check_args_len(cmd, args, 0):
                 get_spend_for_an_account()
