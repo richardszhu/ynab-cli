@@ -248,6 +248,9 @@ def flag_category_transactions(flag):
     category_name = categories[i]["name"]
     category_id = categories[i]["id"]
     print(f"Chose category: {category_name} ({category_id})")
+    user_input = input("Proceed? [y/N]").strip()
+    if user_input != "y":
+        return
 
     if flag[0] != "#":
         flag = f"#{flag}"
@@ -264,7 +267,7 @@ def flag_category_transactions(flag):
     for t in transactions:
         if t["category_id"] == category_id:
             # Add flag
-            t['memo'] = f"{t['memo']} {flag}" 
+            t['memo'] = f"{t['memo'] or ''} {flag}" 
             flagged_transactions.append(t)
 
     make_request_with_budget_suffix("PATCH", f"transactions", data={"transactions": flagged_transactions})
