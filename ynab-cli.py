@@ -229,6 +229,48 @@ def unflag_transactions(flag):
     print(f"Unflagged {len(unflagged_transactions)} transactions.")
 
 
+def flag_category_transactions(flag):
+    response = make_request_with_budget_suffix("GET", "categories")
+    cat_groups = response.json()["data"]["category_groups"]
+    
+    print("CATEGORIES:")
+    categories = []
+    for cat_group in cat_groups:
+        for cat in cat_group["categories"]:
+            if not cat["hidden"]:
+                print(f"{len(categories)}: {cat['name']} ({cat['id']})")
+                categories.append(cat)
+
+    user_input = input("Which category do you want to flag? Input the number (or nothing to cancel) > ").strip()
+    if user_input == "":
+        return
+    i = int(user_input)
+    
+    category_name = categories[i]["name"]
+    category_id = categories[i]["id"]
+    print(f"Chose category: {category_name} ({category_id})")
+
+    if flag[0] != "#":
+        flag = f"#{flag}"
+
+    response = make_request_with_budget_suffix("GET", "transactions")
+    if not response:
+        return
+
+    transactions = response.json()["data"]["transactions"]
+
+    print(f"FLAGGING ALL TRANSACTIONS WITH FLAG {flag}.")
+
+    flagged_transactions = []
+    for t in transactions:
+        if t["category_id"] == category_id:
+            # Add flag
+            t['memo'] = f"{t['memo']} {flag}" 
+            flagged_transactions.append(t)
+
+    make_request_with_budget_suffix("PATCH", f"transactions", data={"transactions": flagged_transactions})
+    print(f"Flagged {len(flagged_transactions)} transactions.")
+
 
 def is_spend_transaction(transaction):
     t = transaction
@@ -380,6 +422,10 @@ def main():
         elif cmd == "unused-payees":
             if check_args_len(cmd, args, 0):
                 get_unused_payees()
+        elif cmd == "flag-category":
+            if check_args_len(cmd, args, 1):
+                flag_category_transactions(*args)
+        
         elif cmd == "debug":
             global DEBUG
             DEBUG = not DEBUG
