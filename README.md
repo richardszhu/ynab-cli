@@ -21,6 +21,9 @@ YNAB API: https://api.ynab.com/v1
 `unflag <flag>`
 - Finds all transactions that are marked with #flag [amount], and removes the flag and amount. Doesn't search subtransactions. Assumes flag/amount is at end of the memo.
 
+`flag-category <category_name> <flag>`
+- Flag all transactions in the category (name must be an exact match) with the given flag.
+
 `spend`
 - Finds the total spend for an account (to see progress towards a MSR).
 
