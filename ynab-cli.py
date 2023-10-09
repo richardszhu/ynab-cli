@@ -219,8 +219,7 @@ def unflag_transactions(flag):
 
             #remove flag and amount, update the memo
             memo = t["memo"].split()
-            memo.pop(i)
-            if i < len(memo):
+            for i in range(1 + int(i < len(memo) - 1)):
                 memo.pop(i)
             t['memo'] = " ".join(memo)
             unflagged_transactions.append(t)
