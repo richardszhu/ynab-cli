@@ -1,78 +1,96 @@
 # ynab-cli
 Misc. automations for YNAB
+YNAB API: https://api.ynab.com/v1
 
 ## Installation
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage
+## Setup (Make Executable)
 ```bash
-python3 ynab-cli.py --help
+chmod +x ynab_cli.py
 ```
 
-YNAB API: https://api.ynab.com/v1
+## Usage
+```bash
+# Direct execution
+./ynab_cli.py --help
+./ynab_cli.py spend
+
+# Or with python
+python3.13 ynab_cli.py --help
+```
+
+### Logging Options
+```bash
+./ynab_cli.py budget              # Normal (errors only)
+./ynab_cli.py --verbose budget    # + info messages  
+./ynab_cli.py --debug budget      # + API details
+```
 
 ## Commands
 
 ### Authentication
 ```bash
-python3 ynab-cli.py token <personal_access_token>
+./ynab_cli.py token <personal_access_token>
 ```
 Sets the YNAB personal access token needed to use the API.
 
 ```bash
-python3 ynab-cli.py del-token
+./ynab_cli.py del-token
 ```
 Deletes the YNAB personal access token if it was set.
 
 ### Budget Management
 ```bash
-python3 ynab-cli.py budget
+./ynab_cli.py budget
 ```
 Shows all budgets and lets user set a budget to perform actions on.
 
 ### Transaction Analysis
 ```bash
-python3 ynab-cli.py total <flag>
+./ynab_cli.py total <flag>
 ```
 Finds all transactions that are marked with #flag [amount], and finds their sum. Doesn't search subtransactions.
 
 ```bash
-python3 ynab-cli.py unflag <flag>
+./ynab_cli.py unflag <flag>
 ```
 Finds all transactions that are marked with #flag [amount], and removes the flag and amount. Doesn't search subtransactions. Assumes flag/amount is at end of the memo.
 
 ```bash
-python3 ynab-cli.py flag-category <flag>
+./ynab_cli.py flag-category <flag>
 ```
 Pick a category and flag all of its transactions with the given flag.
 
 ```bash
-python3 ynab-cli.py spend
+./ynab_cli.py spend
 ```
 Finds the total spend for an account (to see progress towards a MSR).
 
 ### Credit Card Analysis
 ```bash
-python3 ynab-cli.py window <num_months>
+./ynab_cli.py window <num_months>
 ```
 Finds the number of new credit cards opened in the last num_months. Based on 'Starting Balance' payee, and on accounts in YNAB (be wary of AU cards).
 
 ### Data Management
 ```bash
-python3 ynab-cli.py unused-payees
+./ynab_cli.py unused-payees
 ```
 Lists out payees that have no transactions attributed to them.
 
 ### Debugging
+Use the `--debug` flag with any command to enable detailed logging:
 ```bash
-python3 ynab-cli.py debug
+./ynab_cli.py --debug budget
 ```
-Toggle debugging mode on/off.
 
 ## Requirements
 - Python 3.7+
 - click
 - requests
 - python-dateutil
+
+See requirements.txt
