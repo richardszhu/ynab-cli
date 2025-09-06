@@ -4,6 +4,7 @@ import json
 from pprint import pprint
 from datetime import date
 from dateutil.relativedelta import relativedelta
+import click
 
 # https://stackoverflow.com/a/46061872
 TOKEN_FILE = Path(__file__).resolve().parent / ".YNAB_PERSONAL_ACCESS_TOKEN"
@@ -380,66 +381,81 @@ def make_request(method, suffix, data=None):
     return response
     
 
-## REPL
+## CLI COMMANDS
 
-def check_args_len(cmd, args, expected_num_args):
-    correct_len = len(args) == expected_num_args
-    if not correct_len:
-        print(f"Command {cmd} expects {expected_num_args} args, received {len(args)}.")
-    return correct_len
+@click.group()
+@click.version_option(version="1.0.0")
+def cli():
+    """YNAB CLI - Misc. automations for YNAB"""
+    pass
 
 
-def main():
-    print(
-        "=== YNAB CLI ===\n"
-        "Author: @richardszhu"
-    )
+@cli.command()
+@click.argument('token')
+def token(token):
+    """Set the YNAB personal access token needed to use the API."""
+    set_token(token)
 
-    while True:
-        user_input = input("> ").split()
-        cmd = user_input[0].lower() if user_input else ""
-        args = user_input[1:]
 
-        if cmd == "token":
-            if check_args_len(cmd, args, 1):
-                set_token(*args)
-        elif cmd == "del-token":
-            if check_args_len(cmd, args, 0):
-                delete_token(*args)
-        elif cmd == "budget":
-            if check_args_len(cmd, args, 0):
-                get_all_budgets_and_set_chosen()
-        elif cmd == "total":
-            if check_args_len(cmd, args, 1):
-                get_total_with_flag(*args)
-        elif cmd == "unflag":
-            if check_args_len(cmd, args, 1):
-                unflag_transactions(*args)
-        elif cmd == "spend":
-            if check_args_len(cmd, args, 0):
-                get_spend_for_an_account()
-        elif cmd == "window":
-            if check_args_len(cmd, args, 1):
-                get_credit_card_openings_in_window(*map(int, args))
-        elif cmd == "unused-payees":
-            if check_args_len(cmd, args, 0):
-                get_unused_payees()
-        elif cmd == "flag-category":
-            if check_args_len(cmd, args, 1):
-                flag_category_transactions(*args)
-        
-        elif cmd == "debug":
-            global DEBUG
-            DEBUG = not DEBUG
-            print(f"Debugging mode: {DEBUG}")
-        elif cmd in ["help", ""]:
-            print("See README.md")
-        elif cmd in ["quit", "q"]:
-            print("Quitting.")
-            break
-        else:
-            print("Command unknown.")
+@cli.command()
+def del_token():
+    """Delete the YNAB personal access token if it was set."""
+    delete_token()
+
+
+@cli.command()
+def budget():
+    """Show all budgets and let user set a budget to perform actions on."""
+    get_all_budgets_and_set_chosen()
+
+
+@cli.command()
+@click.argument('flag')
+def total(flag):
+    """Find all transactions that are marked with #flag [amount], and find their sum."""
+    get_total_with_flag(flag)
+
+
+@cli.command()
+@click.argument('flag')
+def unflag(flag):
+    """Find all transactions that are marked with #flag [amount], and remove the flag and amount."""
+    unflag_transactions(flag)
+
+
+@cli.command()
+def spend():
+    """Find the total spend for an account (to see progress towards a MSR)."""
+    get_spend_for_an_account()
+
+
+@cli.command()
+@click.argument('num_months', type=int)
+def window(num_months):
+    """Find the number of new credit cards opened in the last num_months."""
+    get_credit_card_openings_in_window(num_months)
+
+
+@cli.command()
+def unused_payees():
+    """List out payees that have no transactions attributed to them."""
+    get_unused_payees()
+
+
+@cli.command()
+@click.argument('flag')
+def flag_category(flag):
+    """Pick a category and flag all of its transactions with the given flag."""
+    flag_category_transactions(flag)
+
+
+@cli.command()
+def debug():
+    """Toggle debugging mode on/off."""
+    global DEBUG
+    DEBUG = not DEBUG
+    click.echo(f"Debugging mode: {DEBUG}")
 
 
 if __name__ == "__main__":
-    main()
+    cli()
