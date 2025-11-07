@@ -64,11 +64,21 @@ def delete_token() -> None:
 
 ## BUDGETS 
 
-def get_all_budgets_and_set_chosen() -> None:
+def get_all_budgets() -> list[dict[str, Any]] | None:
+    """Get all budgets. Returns None if request fails."""
     logger.info("Fetching all budgets")
     response = make_request("GET", "/budgets")
+    if not response or not response.ok:
+        return None
     budgets = response.json()["data"]["budgets"]
     logger.info(f"Found {len(budgets)} budgets")
+    return budgets
+
+
+def get_all_budgets_and_set_chosen() -> None:
+    budgets = get_all_budgets()
+    if not budgets:
+        return
     
     click.echo("BUDGETS:")
     for i, budget in enumerate(budgets):
@@ -104,11 +114,18 @@ def get_budget_id() -> str | None:
 
 ## ACCOUNTS
 
-def get_all_accounts_and_id_of_chosen() -> str:
+def get_all_accounts() -> list[dict[str, Any]] | None:
+    """Get all accounts for the current budget. Returns None if request fails."""
     response = make_request_with_budget_suffix("GET", "accounts")
-    if not response:
+    if not response or not response.ok:
+        return None
+    return response.json()["data"]["accounts"]
+
+
+def get_all_accounts_and_id_of_chosen() -> str:
+    accounts = get_all_accounts()
+    if not accounts:
         return ""
-    accounts = response.json()["data"]["accounts"]
 
     click.echo("ACCOUNTS:")
     for i, account in enumerate(accounts):
@@ -129,23 +146,28 @@ def get_all_accounts_and_id_of_chosen() -> str:
     return account_id
 
 
+def get_account_transactions(account_id: str) -> list[dict[str, Any]] | None:
+    """Get all transactions for a specific account. Returns None if request fails."""
+    response = make_request_with_budget_suffix("GET", f"accounts/{account_id}/transactions")
+    if not response or not response.ok:
+        return None
+    return response.json()["data"]["transactions"]
+
+
 def get_credit_card_openings_in_window(num_months: int) -> None:
     window_start = date.today() - relativedelta(months=num_months)
     click.echo(f"ACCOUNTS OPENED IN THE LAST {num_months} MONTHS:")
     
-
-    response = make_request_with_budget_suffix("GET", "accounts")
-    if not response:
+    accounts = get_all_accounts()
+    if not accounts:
         return
-    accounts = response.json()["data"]["accounts"]
 
     total = 0
     for account in accounts:
         if account["type"] == "creditCard":
-            response = make_request_with_budget_suffix("GET", f"accounts/{account['id']}/transactions")
-            if not response:
+            transactions = get_account_transactions(account['id'])
+            if not transactions:
                 continue
-            transactions = response.json()["data"]["transactions"]
 
             starting_bal_transaction = next(t for t in transactions if t["payee_name"] == "Starting Balance")
             opening_date = date.fromisoformat(starting_bal_transaction["date"])
@@ -192,9 +214,15 @@ def normalize_flag(flag: str) -> str:
 def get_all_transactions() -> list[dict[str, Any]] | None:
     """Get all transactions for the current budget. Returns None if request fails."""
     response = make_request_with_budget_suffix("GET", "transactions")
-    if not response:
+    if not response or not response.ok:
         return None
     return response.json()["data"]["transactions"]
+
+
+def update_transactions(transactions: list[dict[str, Any]]) -> bool:
+    """Update transactions via PATCH request. Returns True if successful."""
+    response = make_request_with_budget_suffix("PATCH", "transactions", data={"transactions": transactions})
+    return response is not None and response.ok
 
 
 def find_flag_index_in_memo(transaction: dict[str, Any], flag: str) -> int | None:
@@ -209,11 +237,10 @@ def get_total_with_flag(flag: str) -> None:
     flag = normalize_flag(flag)
 
     logger.info(f"Searching for transactions with flag: {flag}")
-    response = make_request_with_budget_suffix("GET", "transactions")
-    if not response:
+    transactions = get_all_transactions()
+    if not transactions:
         return
 
-    transactions = response.json()["data"]["transactions"]
     logger.info(f"Found {len(transactions)} total transactions")
 
     click.echo(f"ALL TRANSACTIONS WITH FLAG {flag}:")
@@ -252,17 +279,14 @@ def get_total_with_flag(flag: str) -> None:
 def unflag_transactions(flag: str) -> None:
     flag = normalize_flag(flag)
 
-    response = make_request_with_budget_suffix("GET", "transactions")
-    if not response:
+    transactions = get_all_transactions()
+    if not transactions:
         return
-
-    transactions = response.json()["data"]["transactions"]
 
     click.echo(f"UNFLAGGING ALL TRANSACTIONS WITH FLAG {flag}.")
 
     unflagged_transactions: list[dict[str, Any]] = []
     for t in transactions:
-
         memo_words = (t["memo"] or "").lower().split()
         if flag in memo_words:
             i = memo_words.index(flag)
@@ -274,8 +298,8 @@ def unflag_transactions(flag: str) -> None:
             t['memo'] = " ".join(memo)
             unflagged_transactions.append(t)
 
-    make_request_with_budget_suffix("PATCH", f"transactions", data={"transactions": unflagged_transactions})
-    click.echo(f"Unflagged {len(unflagged_transactions)} transactions.")
+    if update_transactions(unflagged_transactions):
+        click.echo(f"Unflagged {len(unflagged_transactions)} transactions.")
 
 
 def rename_flag_transactions(old_flag: str, new_flag: str) -> None:
@@ -306,17 +330,26 @@ def rename_flag_transactions(old_flag: str, new_flag: str) -> None:
                 continue
 
     if renamed_transactions:
-        make_request_with_budget_suffix("PATCH", f"transactions", data={"transactions": renamed_transactions})
-        click.echo(f"Renamed flag in {len(renamed_transactions)} transactions.")
+        if update_transactions(renamed_transactions):
+            click.echo(f"Renamed flag in {len(renamed_transactions)} transactions.")
     else:
         click.echo(f"No transactions found with flag {old_flag}.")
+
+
+def get_all_categories() -> list[dict[str, Any]] | None:
+    """Get all category groups with their categories. Returns None if request fails."""
+    response = make_request_with_budget_suffix("GET", "categories")
+    if not response or not response.ok:
+        return None
+    return response.json()["data"]["category_groups"]
 
 
 def flag_category_transactions(flag: str) -> None:
     flag = normalize_flag(flag)
 
-    response = make_request_with_budget_suffix("GET", "categories")
-    cat_groups = response.json()["data"]["category_groups"]
+    cat_groups = get_all_categories()
+    if not cat_groups:
+        return
     
     click.echo("CATEGORIES:")
     categories: list[dict[str, Any]] = []
@@ -342,11 +375,9 @@ def flag_category_transactions(flag: str) -> None:
     if not click.confirm("Proceed?"):
         return
 
-    response = make_request_with_budget_suffix("GET", "transactions")
-    if not response:
+    transactions = get_all_transactions()
+    if not transactions:
         return
-
-    transactions = response.json()["data"]["transactions"]
 
     click.echo(f"FLAGGING ALL TRANSACTIONS WITH FLAG {flag}.")
 
@@ -357,8 +388,8 @@ def flag_category_transactions(flag: str) -> None:
             t['memo'] = f"{t['memo'] or ''} {flag}" 
             flagged_transactions.append(t)
 
-    make_request_with_budget_suffix("PATCH", f"transactions", data={"transactions": flagged_transactions})
-    click.echo(f"Flagged {len(flagged_transactions)} transactions.")
+    if update_transactions(flagged_transactions):
+        click.echo(f"Flagged {len(flagged_transactions)} transactions.")
 
 
 def is_spend_transaction(transaction: dict[str, Any]) -> bool:
@@ -373,11 +404,9 @@ def get_spend_for_an_account() -> None:
     if not account_id:
         return
 
-    response = make_request_with_budget_suffix("GET", f"accounts/{account_id}/transactions")
-    if not response:
+    transactions = get_account_transactions(account_id)
+    if not transactions:
         return
-
-    transactions = response.json()["data"]["transactions"]
 
     click.echo("ALL TRANSACTIONS FOR THIS ACCOUNT:")
     total = 0
@@ -414,29 +443,34 @@ def get_spend_for_an_account() -> None:
 
 ## PAYEES
 
+def get_all_payees() -> list[dict[str, Any]] | None:
+    """Get all payees for the current budget. Returns None if request fails."""
+    response = make_request_with_budget_suffix("GET", "payees")
+    if not response or not response.ok:
+        return None
+    return response.json()["data"]["payees"]
+
+
 def get_unused_payees() -> None:    
-    response = make_request_with_budget_suffix("GET", "transactions")
-    if not response:
+    transactions = get_all_transactions()
+    if not transactions:
         return
 
-    transactions = response.json()["data"]["transactions"]
     used_payee_ids: set[str] = set()
     for t in transactions:
         used_payee_ids.add(t["payee_id"])
         for st in t["subtransactions"]:
             used_payee_ids.add(st["payee_id"])
 
-    response = make_request_with_budget_suffix("GET", "payees")
-    if not response:
+    payees = get_all_payees()
+    if not payees:
         return
 
     click.echo("UNUSED PAYEES:")
-    payees = sorted(response.json()["data"]["payees"], key=lambda p: p["name"].lower())
-    for p in payees:
+    sorted_payees = sorted(payees, key=lambda p: p["name"].lower())
+    for p in sorted_payees:
         if p["id"] not in used_payee_ids and p["transfer_account_id"] is None:
             click.echo(p["name"])
-
-
 
 
 ## REQUESTS
