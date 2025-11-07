@@ -4,10 +4,11 @@ import logging
 import sys
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 import click
+import requests
 from dateutil.relativedelta import relativedelta
-from requests import Response, request
 
 # https://stackoverflow.com/a/46061872
 TOKEN_FILE = Path(__file__).resolve().parent / ".YNAB_PERSONAL_ACCESS_TOKEN"
@@ -239,7 +240,7 @@ def unflag_transactions(flag: str) -> None:
 
     click.echo(f"UNFLAGGING ALL TRANSACTIONS WITH FLAG {flag}.")
 
-    unflagged_transactions = []
+    unflagged_transactions: list[dict[str, Any]] = []
     for t in transactions:
 
         memo_words = (t["memo"] or "").lower().split()
@@ -262,7 +263,7 @@ def flag_category_transactions(flag: str) -> None:
     cat_groups = response.json()["data"]["category_groups"]
     
     click.echo("CATEGORIES:")
-    categories = []
+    categories: list[dict[str, Any]] = []
     for cat_group in cat_groups:
         for cat in cat_group["categories"]:
             if not cat["hidden"]:
@@ -296,7 +297,7 @@ def flag_category_transactions(flag: str) -> None:
 
     click.echo(f"FLAGGING ALL TRANSACTIONS WITH FLAG {flag}.")
 
-    flagged_transactions = []
+    flagged_transactions: list[dict[str, Any]] = []
     for t in transactions:
         if t["category_id"] == category_id:
             # Add flag
@@ -307,7 +308,7 @@ def flag_category_transactions(flag: str) -> None:
     click.echo(f"Flagged {len(flagged_transactions)} transactions.")
 
 
-def is_spend_transaction(transaction: dict) -> bool:
+def is_spend_transaction(transaction: dict[str, Any]) -> bool:
     t = transaction
     is_transfer = t["transfer_transaction_id"]
     is_statement_credit = t["category_name"] == "Inflow: Ready to Assign"
@@ -366,7 +367,7 @@ def get_unused_payees() -> None:
         return
 
     transactions = response.json()["data"]["transactions"]
-    used_payee_ids = set()
+    used_payee_ids: set[str] = set()
     for t in transactions:
         used_payee_ids.add(t["payee_id"])
         for st in t["subtransactions"]:
@@ -387,7 +388,7 @@ def get_unused_payees() -> None:
 
 ## REQUESTS
 
-def make_request_with_budget_suffix(method: str, suffix: str, data: dict | None = None) -> Response | None:
+def make_request_with_budget_suffix(method: str, suffix: str, data: dict[str, Any] | None = None) -> requests.Response | None:
     budget_id = get_budget_id()
     if not budget_id:
         return None
@@ -395,7 +396,7 @@ def make_request_with_budget_suffix(method: str, suffix: str, data: dict | None 
     return make_request(method, suffix_with_budget, data)
 
 
-def make_request(method: str, suffix: str, data: dict | None = None) -> Response | None:
+def make_request(method: str, suffix: str, data: dict[str, Any] | None = None) -> requests.Response | None:
     token = get_token()
     if not token:
         return None
@@ -408,7 +409,7 @@ def make_request(method: str, suffix: str, data: dict | None = None) -> Response
     if data:
         logger.debug(f"Request data: {json.dumps(data, indent=2)}")
     
-    response = request(method=method, url=url, headers=headers, json=data)
+    response = requests.request(method=method, url=url, headers=headers, json=data)
     
     logger.debug(f"Response status: {response.status_code}")
     logger.debug(f"Response headers: {dict(response.headers)}")
