@@ -1,12 +1,13 @@
 #!/usr/bin/env python3.13
-from pathlib import Path
-from requests import request, Response
 import json
-from datetime import date
-from dateutil.relativedelta import relativedelta
-import click
 import logging
 import sys
+from datetime import date
+from pathlib import Path
+
+import click
+from dateutil.relativedelta import relativedelta
+from requests import Response, request
 
 # https://stackoverflow.com/a/46061872
 TOKEN_FILE = Path(__file__).resolve().parent / ".YNAB_PERSONAL_ACCESS_TOKEN"
