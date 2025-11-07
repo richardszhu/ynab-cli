@@ -182,10 +182,31 @@ def eval_fraction(string: str) -> float:
         return 0
 
 
+def normalize_flag(flag: str) -> str:
+    """Normalize a flag to include # prefix if missing."""
+    if flag[0] != "#":
+        return f"#{flag}"
+    return flag
+
+
+def get_all_transactions() -> list[dict[str, Any]] | None:
+    """Get all transactions for the current budget. Returns None if request fails."""
+    response = make_request_with_budget_suffix("GET", "transactions")
+    if not response:
+        return None
+    return response.json()["data"]["transactions"]
+
+
+def find_flag_index_in_memo(transaction: dict[str, Any], flag: str) -> int | None:
+    """Find the index of a flag in a transaction's memo. Returns None if not found."""
+    memo_words = (transaction["memo"] or "").lower().split()
+    if flag.lower() in memo_words:
+        return memo_words.index(flag.lower())
+    return None
+
 
 def get_total_with_flag(flag: str) -> None:
-    if flag[0] != "#":
-        flag = f"#{flag}"
+    flag = normalize_flag(flag)
 
     logger.info(f"Searching for transactions with flag: {flag}")
     response = make_request_with_budget_suffix("GET", "transactions")
@@ -229,8 +250,7 @@ def get_total_with_flag(flag: str) -> None:
 
 
 def unflag_transactions(flag: str) -> None:
-    if flag[0] != "#":
-        flag = f"#{flag}"
+    flag = normalize_flag(flag)
 
     response = make_request_with_budget_suffix("GET", "transactions")
     if not response:
@@ -258,7 +278,43 @@ def unflag_transactions(flag: str) -> None:
     click.echo(f"Unflagged {len(unflagged_transactions)} transactions.")
 
 
+def rename_flag_transactions(old_flag: str, new_flag: str) -> None:
+    old_flag = normalize_flag(old_flag)
+    new_flag = normalize_flag(new_flag)
+
+    transactions = get_all_transactions()
+    if not transactions:
+        return
+
+    click.echo(f"RENAMING FLAG {old_flag} TO {new_flag} IN ALL TRANSACTIONS.")
+
+    renamed_transactions: list[dict[str, Any]] = []
+    for t in transactions:
+        flag_index = find_flag_index_in_memo(t, old_flag)
+        if flag_index is not None:
+            # Replace the old flag with the new flag in the memo
+            memo = t["memo"].split()
+            # Find the index in the original case-sensitive memo
+            original_memo_lower = (t["memo"] or "").lower().split()
+            try:
+                original_i = original_memo_lower.index(old_flag.lower())
+                memo[original_i] = new_flag
+                t['memo'] = " ".join(memo)
+                renamed_transactions.append(t)
+            except (ValueError, IndexError):
+                # Skip if we can't find the flag in the original memo
+                continue
+
+    if renamed_transactions:
+        make_request_with_budget_suffix("PATCH", f"transactions", data={"transactions": renamed_transactions})
+        click.echo(f"Renamed flag in {len(renamed_transactions)} transactions.")
+    else:
+        click.echo(f"No transactions found with flag {old_flag}.")
+
+
 def flag_category_transactions(flag: str) -> None:
+    flag = normalize_flag(flag)
+
     response = make_request_with_budget_suffix("GET", "categories")
     cat_groups = response.json()["data"]["category_groups"]
     
@@ -285,9 +341,6 @@ def flag_category_transactions(flag: str) -> None:
     
     if not click.confirm("Proceed?"):
         return
-
-    if flag[0] != "#":
-        flag = f"#{flag}"
 
     response = make_request_with_budget_suffix("GET", "transactions")
     if not response:
@@ -472,6 +525,14 @@ def total(flag: str) -> None:
 def unflag(flag: str) -> None:
     """Find all transactions that are marked with #flag [amount], and remove the flag and amount."""
     unflag_transactions(flag)
+
+
+@cli.command(name="rename-flag")
+@click.argument('old_flag')
+@click.argument('new_flag')
+def rename_flag(old_flag: str, new_flag: str) -> None:
+    """Find all transactions with old_flag and rename it to new_flag."""
+    rename_flag_transactions(old_flag, new_flag)
 
 
 @cli.command()
