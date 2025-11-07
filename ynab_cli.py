@@ -16,6 +16,19 @@ BUDGET_ID_FILE = Path(__file__).resolve().parent / ".YNAB_BUDGET_ID"
 BASE_API_URL = "https://api.youneedabudget.com/v1/"
 MONEY_GRANULARITY = 1000
 
+FRACTION_WORDS: dict[str, float] = {
+    "full" : 1,
+    "all" : 1,
+    "half" : 1 / 2,
+    "third" : 1 / 3, 
+    "fourth" : 1 / 4,
+    "quarter": 1 / 4,
+    "fifth": 1 / 5,
+    "sixth": 1 / 6,
+    "seventh": 1 / 7,
+    "eighth": 1 / 8,
+}
+
 # Simple logging setup
 logging.basicConfig(
     level=logging.WARNING,
@@ -152,13 +165,6 @@ def str_is_float(string: str) -> bool:
     except ValueError:
         return False
 
-FRACTION_WORDS: dict[str, float] = {
-    "full" : 1,
-    "half" : 1 / 2,
-    "third" : 1 / 3, 
-    "fourth" : 1 / 4,
-    "fifth": 1 / 5,
-}
 
 def eval_fraction(string: str) -> float:
     """Returns 0 if str is not a fraction, else the fraction"""
