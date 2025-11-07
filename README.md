@@ -60,6 +60,11 @@ Finds all transactions that are marked with #flag [amount], and finds their sum.
 Finds all transactions that are marked with #flag [amount], and removes the flag and amount. Doesn't search subtransactions. Assumes flag/amount is at end of the memo.
 
 ```bash
+./ynab_cli.py rename-flag <old_flag> <new_flag>
+```
+Finds all transactions with old_flag and renames it to new_flag.
+
+```bash
 ./ynab_cli.py flag-category <flag>
 ```
 Pick a category and flag all of its transactions with the given flag.
