@@ -4,7 +4,7 @@ YNAB API: https://api.ynab.com/v1
 
 ## Installation
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 ## Setup (Make Executable)
@@ -109,7 +109,7 @@ This project uses [ruff](https://docs.astral.sh/ruff/) for code formatting and l
 **Quick start:**
 ```bash
 # Install development dependencies
-pip install -r requirements-dev.txt
+pip3 install -r requirements-dev.txt
 
 # Format and fix all code issues
 ruff format . && ruff check --fix .
