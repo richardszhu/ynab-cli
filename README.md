@@ -108,8 +108,8 @@ This project uses [ruff](https://docs.astral.sh/ruff/) for code formatting and l
 
 **Quick start:**
 ```bash
-# Install ruff (if not already installed)
-pip install ruff
+# Install development dependencies
+pip install -r requirements-dev.txt
 
 # Format and fix all code issues
 ruff format . && ruff check --fix .
