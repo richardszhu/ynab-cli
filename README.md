@@ -1,5 +1,6 @@
 # ynab-cli
 Misc. automations for YNAB
+
 YNAB API: https://api.ynab.com/v1
 
 ## Installation
