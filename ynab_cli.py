@@ -18,11 +18,11 @@ BASE_API_URL = "https://api.youneedabudget.com/v1/"
 MONEY_GRANULARITY = 1000
 
 FRACTION_WORDS: dict[str, float] = {
-    "full" : 1,
-    "all" : 1,
-    "half" : 1 / 2,
-    "third" : 1 / 3, 
-    "fourth" : 1 / 4,
+    "full": 1,
+    "all": 1,
+    "half": 1 / 2,
+    "third": 1 / 3,
+    "fourth": 1 / 4,
     "quarter": 1 / 4,
     "fifth": 1 / 5,
     "sixth": 1 / 6,
@@ -62,7 +62,7 @@ def delete_token() -> None:
     click.echo("Deleted token.")
 
 
-## BUDGETS 
+## BUDGETS
 
 def get_all_budgets() -> list[dict[str, Any]] | None:
     """Get all budgets. Returns None if request fails."""
@@ -79,7 +79,7 @@ def get_all_budgets_and_set_chosen() -> None:
     budgets = get_all_budgets()
     if not budgets:
         return
-    
+
     click.echo("BUDGETS:")
     for i, budget in enumerate(budgets):
         click.echo(f"{i}: {budget['name']} ({budget['id']})")
@@ -88,14 +88,14 @@ def get_all_budgets_and_set_chosen() -> None:
         click.echo(f"Current budget ID: {get_budget_id()}")
 
     try:
-        user_input = click.prompt("Which budget do you want to set? Input the number (or nothing to cancel)", 
+        user_input = click.prompt("Which budget do you want to set? Input the number (or nothing to cancel)",
                                  default="", show_default=False)
         if not user_input.strip():
             return
         i = int(user_input)
     except (click.Abort, ValueError):
         return
-    
+
     budget_name = budgets[i]["name"]
     budget_id = budgets[i]["id"]
     BUDGET_ID_FILE.write_text(budget_id)
@@ -132,7 +132,7 @@ def get_all_accounts_and_id_of_chosen() -> str:
         click.echo(f"{i}: {account['name']}")
 
     try:
-        user_input = click.prompt("Which account do you choose? Input the number (or nothing to cancel)", 
+        user_input = click.prompt("Which account do you choose? Input the number (or nothing to cancel)",
                                  default="", show_default=False)
         if not user_input.strip():
             return ""
@@ -157,7 +157,7 @@ def get_account_transactions(account_id: str) -> list[dict[str, Any]] | None:
 def get_credit_card_openings_in_window(num_months: int) -> None:
     window_start = date.today() - relativedelta(months=num_months)
     click.echo(f"ACCOUNTS OPENED IN THE LAST {num_months} MONTHS:")
-    
+
     accounts = get_all_accounts()
     if not accounts:
         return
@@ -175,7 +175,7 @@ def get_credit_card_openings_in_window(num_months: int) -> None:
             if opening_date >= window_start:
                 total += 1
                 click.echo(f"{account['name']} (Opened {opening_date})")
-    
+
     click.echo(f"TOTAL: {total}")
 
 
@@ -350,7 +350,7 @@ def flag_category_transactions(flag: str) -> None:
     cat_groups = get_all_categories()
     if not cat_groups:
         return
-    
+
     click.echo("CATEGORIES:")
     categories: list[dict[str, Any]] = []
     for cat_group in cat_groups:
@@ -360,18 +360,18 @@ def flag_category_transactions(flag: str) -> None:
                 categories.append(cat)
 
     try:
-        user_input = click.prompt("Which category do you want to flag? Input the number (or nothing to cancel)", 
+        user_input = click.prompt("Which category do you want to flag? Input the number (or nothing to cancel)",
                                  default="", show_default=False)
         if not user_input.strip():
             return
         i = int(user_input)
     except (click.Abort, ValueError):
         return
-    
+
     category_name = categories[i]["name"]
     category_id = categories[i]["id"]
     click.echo(f"Chose category: {category_name} ({category_id})")
-    
+
     if not click.confirm("Proceed?"):
         return
 
@@ -385,7 +385,7 @@ def flag_category_transactions(flag: str) -> None:
     for t in transactions:
         if t["category_id"] == category_id:
             # Add flag
-            t['memo'] = f"{t['memo'] or ''} {flag}" 
+            t['memo'] = f"{t['memo'] or ''} {flag}"
             flagged_transactions.append(t)
 
     if update_transactions(flagged_transactions):
@@ -451,7 +451,7 @@ def get_all_payees() -> list[dict[str, Any]] | None:
     return response.json()["data"]["payees"]
 
 
-def get_unused_payees() -> None:    
+def get_unused_payees() -> None:
     transactions = get_all_transactions()
     if not transactions:
         return
@@ -479,7 +479,7 @@ def make_request_with_budget_suffix(method: str, suffix: str, data: dict[str, An
     budget_id = get_budget_id()
     if not budget_id:
         return None
-    suffix_with_budget = f"budgets/{budget_id}/{suffix}" 
+    suffix_with_budget = f"budgets/{budget_id}/{suffix}"
     return make_request(method, suffix_with_budget, data)
 
 
@@ -490,24 +490,24 @@ def make_request(method: str, suffix: str, data: dict[str, Any] | None = None) -
 
     url = BASE_API_URL + suffix
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     logger.debug(f"Making {method} request to {suffix}")
     logger.debug(f"URL: {url}")
     if data:
         logger.debug(f"Request data: {json.dumps(data, indent=2)}")
-    
+
     response = requests.request(method=method, url=url, headers=headers, json=data)
-    
+
     logger.debug(f"Response status: {response.status_code}")
     logger.debug(f"Response headers: {dict(response.headers)}")
-    
+
     if not response.ok:
         logger.error(f"Request failed: {response.status_code} - {response.text}")
     else:
         logger.debug(f"Request successful")
 
     return response
-    
+
 
 ## CLI COMMANDS
 
