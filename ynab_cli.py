@@ -18,11 +18,11 @@ BASE_API_URL = "https://api.youneedabudget.com/v1/"
 MONEY_GRANULARITY = 1000
 
 FRACTION_WORDS: dict[str, float] = {
-    "full" : 1,
-    "all" : 1,
-    "half" : 1 / 2,
-    "third" : 1 / 3, 
-    "fourth" : 1 / 4,
+    "full": 1,
+    "all": 1,
+    "half": 1 / 2,
+    "third": 1 / 3,
+    "fourth": 1 / 4,
     "quarter": 1 / 4,
     "fifth": 1 / 5,
     "sixth": 1 / 6,
@@ -33,13 +33,14 @@ FRACTION_WORDS: dict[str, float] = {
 # Simple logging setup
 logging.basicConfig(
     level=logging.WARNING,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%H:%M:%S',
-    stream=sys.stderr
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%H:%M:%S",
+    stream=sys.stderr,
 )
-logger = logging.getLogger('ynab-cli')
+logger = logging.getLogger("ynab-cli")
 
 ## TOKENS
+
 
 def get_token() -> str | None:
     if not TOKEN_FILE.exists():
@@ -62,7 +63,8 @@ def delete_token() -> None:
     click.echo("Deleted token.")
 
 
-## BUDGETS 
+## BUDGETS
+
 
 def get_all_budgets() -> list[dict[str, Any]] | None:
     """Get all budgets. Returns None if request fails."""
@@ -79,7 +81,7 @@ def get_all_budgets_and_set_chosen() -> None:
     budgets = get_all_budgets()
     if not budgets:
         return
-    
+
     click.echo("BUDGETS:")
     for i, budget in enumerate(budgets):
         click.echo(f"{i}: {budget['name']} ({budget['id']})")
@@ -88,14 +90,17 @@ def get_all_budgets_and_set_chosen() -> None:
         click.echo(f"Current budget ID: {get_budget_id()}")
 
     try:
-        user_input = click.prompt("Which budget do you want to set? Input the number (or nothing to cancel)", 
-                                 default="", show_default=False)
+        user_input = click.prompt(
+            "Which budget do you want to set? Input the number (or nothing to cancel)",
+            default="",
+            show_default=False,
+        )
         if not user_input.strip():
             return
         i = int(user_input)
     except (click.Abort, ValueError):
         return
-    
+
     budget_name = budgets[i]["name"]
     budget_id = budgets[i]["id"]
     BUDGET_ID_FILE.write_text(budget_id)
@@ -104,15 +109,13 @@ def get_all_budgets_and_set_chosen() -> None:
 
 def get_budget_id() -> str | None:
     if not BUDGET_ID_FILE.exists():
-        click.echo(
-            "YNAB Budget ID not set.\n"
-            "Set it with `budget`."
-        )
+        click.echo("YNAB Budget ID not set.\nSet it with `budget`.")
         return None
     return BUDGET_ID_FILE.read_text()
 
 
 ## ACCOUNTS
+
 
 def get_all_accounts() -> list[dict[str, Any]] | None:
     """Get all accounts for the current budget. Returns None if request fails."""
@@ -132,8 +135,11 @@ def get_all_accounts_and_id_of_chosen() -> str:
         click.echo(f"{i}: {account['name']}")
 
     try:
-        user_input = click.prompt("Which account do you choose? Input the number (or nothing to cancel)", 
-                                 default="", show_default=False)
+        user_input = click.prompt(
+            "Which account do you choose? Input the number (or nothing to cancel)",
+            default="",
+            show_default=False,
+        )
         if not user_input.strip():
             return ""
         i = int(user_input)
@@ -157,7 +163,7 @@ def get_account_transactions(account_id: str) -> list[dict[str, Any]] | None:
 def get_credit_card_openings_in_window(num_months: int) -> None:
     window_start = date.today() - relativedelta(months=num_months)
     click.echo(f"ACCOUNTS OPENED IN THE LAST {num_months} MONTHS:")
-    
+
     accounts = get_all_accounts()
     if not accounts:
         return
@@ -165,21 +171,24 @@ def get_credit_card_openings_in_window(num_months: int) -> None:
     total = 0
     for account in accounts:
         if account["type"] == "creditCard":
-            transactions = get_account_transactions(account['id'])
+            transactions = get_account_transactions(account["id"])
             if not transactions:
                 continue
 
-            starting_bal_transaction = next(t for t in transactions if t["payee_name"] == "Starting Balance")
+            starting_bal_transaction = next(
+                t for t in transactions if t["payee_name"] == "Starting Balance"
+            )
             opening_date = date.fromisoformat(starting_bal_transaction["date"])
 
             if opening_date >= window_start:
                 total += 1
                 click.echo(f"{account['name']} (Opened {opening_date})")
-    
+
     click.echo(f"TOTAL: {total}")
 
 
 ## TRANSACTIONS
+
 
 def str_is_float(string: str) -> bool:
     try:
@@ -195,7 +204,7 @@ def eval_fraction(string: str) -> float:
         if string in FRACTION_WORDS:
             return FRACTION_WORDS[string]
 
-        values = string.split('/')
+        values = string.split("/")
         if len(values) == 2 and all(v.isdigit() for v in values):
             return eval(string)
         else:
@@ -221,7 +230,9 @@ def get_all_transactions() -> list[dict[str, Any]] | None:
 
 def update_transactions(transactions: list[dict[str, Any]]) -> bool:
     """Update transactions via PATCH request. Returns True if successful."""
-    response = make_request_with_budget_suffix("PATCH", "transactions", data={"transactions": transactions})
+    response = make_request_with_budget_suffix(
+        "PATCH", "transactions", data={"transactions": transactions}
+    )
     return response is not None and response.ok
 
 
@@ -254,11 +265,11 @@ def get_total_with_flag(flag: str) -> None:
             amount_str = memo_words[i + 1].lower() if i + 1 < len(memo_words) else ""
 
             if str_is_float(amount_str):
-                amount = -float(memo_words[i+1]) * MONEY_GRANULARITY
+                amount = -float(memo_words[i + 1]) * MONEY_GRANULARITY
             elif eval_fraction(amount_str):
-                amount = t['amount'] * eval_fraction(amount_str)
+                amount = t["amount"] * eval_fraction(amount_str)
             elif amount_str == "":
-                amount = t['amount']
+                amount = t["amount"]
             else:
                 click.echo("ERROR")
 
@@ -291,11 +302,11 @@ def unflag_transactions(flag: str) -> None:
         if flag in memo_words:
             i = memo_words.index(flag)
 
-            #remove flag and amount, update the memo
+            # remove flag and amount, update the memo
             memo = t["memo"].split()
             for _ in range(1 + int(i < len(memo) - 1)):
                 memo.pop(i)
-            t['memo'] = " ".join(memo)
+            t["memo"] = " ".join(memo)
             unflagged_transactions.append(t)
 
     if update_transactions(unflagged_transactions):
@@ -323,7 +334,7 @@ def rename_flag_transactions(old_flag: str, new_flag: str) -> None:
             try:
                 original_i = original_memo_lower.index(old_flag.lower())
                 memo[original_i] = new_flag
-                t['memo'] = " ".join(memo)
+                t["memo"] = " ".join(memo)
                 renamed_transactions.append(t)
             except (ValueError, IndexError):
                 # Skip if we can't find the flag in the original memo
@@ -350,7 +361,7 @@ def flag_category_transactions(flag: str) -> None:
     cat_groups = get_all_categories()
     if not cat_groups:
         return
-    
+
     click.echo("CATEGORIES:")
     categories: list[dict[str, Any]] = []
     for cat_group in cat_groups:
@@ -360,18 +371,21 @@ def flag_category_transactions(flag: str) -> None:
                 categories.append(cat)
 
     try:
-        user_input = click.prompt("Which category do you want to flag? Input the number (or nothing to cancel)", 
-                                 default="", show_default=False)
+        user_input = click.prompt(
+            "Which category do you want to flag? Input the number (or nothing to cancel)",
+            default="",
+            show_default=False,
+        )
         if not user_input.strip():
             return
         i = int(user_input)
     except (click.Abort, ValueError):
         return
-    
+
     category_name = categories[i]["name"]
     category_id = categories[i]["id"]
     click.echo(f"Chose category: {category_name} ({category_id})")
-    
+
     if not click.confirm("Proceed?"):
         return
 
@@ -385,7 +399,7 @@ def flag_category_transactions(flag: str) -> None:
     for t in transactions:
         if t["category_id"] == category_id:
             # Add flag
-            t['memo'] = f"{t['memo'] or ''} {flag}" 
+            t["memo"] = f"{t['memo'] or ''} {flag}"
             flagged_transactions.append(t)
 
     if update_transactions(flagged_transactions):
@@ -424,7 +438,7 @@ def get_spend_for_an_account() -> None:
                         f"Amount: ${st['amount'] / MONEY_GRANULARITY}\n"
                         f"Memo: {st['memo']}\n"
                     )
-                    total += st['amount']
+                    total += st["amount"]
         else:
             # Check that transaction isn't a transfer and isn't statement credit
             if is_spend_transaction(t):
@@ -436,12 +450,13 @@ def get_spend_for_an_account() -> None:
                     f"Amount: ${t['amount'] / MONEY_GRANULARITY}\n"
                     f"Memo: {t['memo']}\n"
                 )
-                total += t['amount']
+                total += t["amount"]
 
     click.echo(f"TOTAL SPEND: ${-total / MONEY_GRANULARITY}")
 
 
 ## PAYEES
+
 
 def get_all_payees() -> list[dict[str, Any]] | None:
     """Get all payees for the current budget. Returns None if request fails."""
@@ -451,7 +466,7 @@ def get_all_payees() -> list[dict[str, Any]] | None:
     return response.json()["data"]["payees"]
 
 
-def get_unused_payees() -> None:    
+def get_unused_payees() -> None:
     transactions = get_all_transactions()
     if not transactions:
         return
@@ -475,53 +490,59 @@ def get_unused_payees() -> None:
 
 ## REQUESTS
 
-def make_request_with_budget_suffix(method: str, suffix: str, data: dict[str, Any] | None = None) -> requests.Response | None:
+
+def make_request_with_budget_suffix(
+    method: str, suffix: str, data: dict[str, Any] | None = None
+) -> requests.Response | None:
     budget_id = get_budget_id()
     if not budget_id:
         return None
-    suffix_with_budget = f"budgets/{budget_id}/{suffix}" 
+    suffix_with_budget = f"budgets/{budget_id}/{suffix}"
     return make_request(method, suffix_with_budget, data)
 
 
-def make_request(method: str, suffix: str, data: dict[str, Any] | None = None) -> requests.Response | None:
+def make_request(
+    method: str, suffix: str, data: dict[str, Any] | None = None
+) -> requests.Response | None:
     token = get_token()
     if not token:
         return None
 
     url = BASE_API_URL + suffix
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     logger.debug(f"Making {method} request to {suffix}")
     logger.debug(f"URL: {url}")
     if data:
         logger.debug(f"Request data: {json.dumps(data, indent=2)}")
-    
+
     response = requests.request(method=method, url=url, headers=headers, json=data)
-    
+
     logger.debug(f"Response status: {response.status_code}")
     logger.debug(f"Response headers: {dict(response.headers)}")
-    
+
     if not response.ok:
         logger.error(f"Request failed: {response.status_code} - {response.text}")
     else:
-        logger.debug(f"Request successful")
+        logger.debug("Request successful")
 
     return response
-    
+
 
 ## CLI COMMANDS
 
+
 @click.group()
 @click.version_option(version="1.0.0")
-@click.option('--debug', is_flag=True, help='Enable debug logging')
-@click.option('--verbose', '-v', is_flag=True, help='Enable verbose logging')
+@click.option("--debug", is_flag=True, help="Enable debug logging")
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
 @click.pass_context
 def cli(ctx: click.Context, debug: bool, verbose: bool) -> None:
     """YNAB CLI - Misc. automations for YNAB"""
     # Set logging level based on options
     if debug:
         logger.setLevel(logging.DEBUG)
-        logging.getLogger('requests').setLevel(logging.DEBUG)
+        logging.getLogger("requests").setLevel(logging.DEBUG)
     elif verbose:
         logger.setLevel(logging.INFO)
     else:
@@ -529,7 +550,7 @@ def cli(ctx: click.Context, debug: bool, verbose: bool) -> None:
 
 
 @cli.command()
-@click.argument('token')
+@click.argument("token")
 def token(token: str) -> None:
     """Set the YNAB personal access token needed to use the API."""
     set_token(token)
@@ -548,22 +569,22 @@ def budget() -> None:
 
 
 @cli.command()
-@click.argument('flag')
+@click.argument("flag")
 def total(flag: str) -> None:
     """Find all transactions that are marked with #flag [amount], and find their sum."""
     get_total_with_flag(flag)
 
 
 @cli.command()
-@click.argument('flag')
+@click.argument("flag")
 def unflag(flag: str) -> None:
     """Find all transactions that are marked with #flag [amount], and remove the flag and amount."""
     unflag_transactions(flag)
 
 
 @cli.command(name="rename-flag")
-@click.argument('old_flag')
-@click.argument('new_flag')
+@click.argument("old_flag")
+@click.argument("new_flag")
 def rename_flag(old_flag: str, new_flag: str) -> None:
     """Find all transactions with old_flag and rename it to new_flag."""
     rename_flag_transactions(old_flag, new_flag)
@@ -576,7 +597,7 @@ def spend() -> None:
 
 
 @cli.command()
-@click.argument('num_months', type=int)
+@click.argument("num_months", type=int)
 def window(num_months: int) -> None:
     """Find the number of new credit cards opened in the last num_months."""
     get_credit_card_openings_in_window(num_months)
@@ -589,7 +610,7 @@ def unused_payees() -> None:
 
 
 @cli.command()
-@click.argument('flag')
+@click.argument("flag")
 def flag_category(flag: str) -> None:
     """Pick a category and flag all of its transactions with the given flag."""
     flag_category_transactions(flag)

@@ -1,10 +1,11 @@
 # ynab-cli
 Misc. automations for YNAB
+
 YNAB API: https://api.ynab.com/v1
 
 ## Installation
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 ## Setup (Make Executable)
@@ -99,3 +100,30 @@ Use the `--debug` flag with any command to enable detailed logging:
 - python-dateutil
 
 See requirements.txt
+
+## Development
+
+### Code Formatting
+
+This project uses [ruff](https://docs.astral.sh/ruff/) for code formatting and linting.
+
+**Quick start:**
+```bash
+# Install development dependencies
+pip3 install -r requirements-dev.txt
+
+# Format and fix all code issues
+ruff format . && ruff check --fix .
+```
+
+**Other useful commands:**
+```bash
+# Format only
+ruff format .
+
+# Check for issues without fixing
+ruff check .
+
+# Format a specific file
+ruff format ynab_cli.py
+```
